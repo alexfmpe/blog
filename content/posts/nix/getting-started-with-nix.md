@@ -45,6 +45,7 @@ and deleting that extra line from `~/.profile`
 
 We _could_ get our packages by checking out a copy of the set of community packages:
 ```
+# At the time of writing, about 500MB is downloaded
 git clone https://github.com/NixOS/nixpkgs my-nixpkgs-checkout
 ```
 then finding the right branch and installing what we want.
@@ -90,8 +91,10 @@ Let's have a look for the package containing the `tree` utility.
 If we use `-q` on its own, we are querying the set of packages which is installed in this environment:
 ```
 > nix-env -q tree
-<no output>
+error: selector 'tree' matches no derivations
 ```
+
+We haven't installed `tree` yet, so, not surprisingly, it's not found.
 
 If we don't give a package to query for, we'll get a list of all of the packages installed in the environment:
 ```
@@ -148,7 +151,7 @@ nixos.tree    tree-1.7.0
 nixpkgs.tree  tree-1.7.0
 ```
 
-We can then use specify some or all of the attribute path to limit our search:
+We can then use some or all of the attribute path to limit our search:
 ```
 > nix-env -qaP -A nixpkgs tree
 nixpkgs.tree  tree-1.7.0
@@ -158,7 +161,7 @@ nixpkgs.tree  tree-1.7.0
 
 Let's tidy up our channels to keep the output of these commands a bit simpler:
 ```
-> nixos-channel --remove nixos
+> nix-channel --remove nixos
 uninstalling ‘nixos-17.03.1599.f1311880c7’
 ```
 
@@ -170,6 +173,9 @@ Let's look for the `hail` package, which is written in Haskell:
 > nix-env -qaP -A nixpkgs 'hail.*'
 error: selector ‘hail’ matches no derivations
 ```
+
+<span style="color: red;">Querying without the attribute path also fails. I feel like this should be
+mentioned to avoid confusion over whether it doesn't appear because we've specified an attribute path</span>
 
 We didn't find any results, because the Haskell packages are all placed within the `haskellPackages` namespace.
 
@@ -193,6 +199,8 @@ nixpkgs.haskell.packages.ghc802.hail  hail-0.1.0.3
 but that's getting ahead of ourselves.
 
 If you can't find what you're looking for, it might be worth browsing the chapter in the Nixpkgs manual on [lanaguage and framework support](http://nixos.org/nixpkgs/manual/#chap-language-support) to see if you are dealing with something that is namespaced away.
+
+<span style="color: red">Is this the only way to find namespaces? Is it possible to list/search namespaces?</span>
 
 At this point we should be able to look around and find what we're looking for.
 
@@ -235,6 +243,8 @@ Before we install the `tree` utility, let us check that we don't already have it
 ```
 
 We also don't have anything `tree` related in the nix store:
+
+<span style="color: red;">Could we just do `nixenv -qaPs tree.*` (note the `-s`) to display the status, which shows it's not installed or present</span>
 ```
 > ls /nix/store/*tree*
 ls: cannot access '/nix/store/*tree*': No such file or directory
@@ -479,7 +489,7 @@ This happens because Nix hashes everything, and the hash of the user environment
 
 We've seen that erasing `tree` from the user environment doesn't remove it from the Nix store.
 
-Things are only removed from the Nix store when they aren't been used and a garbage collection is run.
+Things are only removed from the Nix store when they aren't being used and a garbage collection is run.
 
 There are options for deleting specific generations, or deleting generations that are more than a certain number of days old.
 That is covered pretty well in the [garbage collection](http://nixos.org/nix/manual/#sec-garbage-collection) section of the NixOS manual.
